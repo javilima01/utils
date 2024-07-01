@@ -1,0 +1,29 @@
+import json
+from enum import Enum
+
+class Singleton(type):
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+class BaseConfig(metaclass=Singleton):
+    def __init__(self, config_path: str):
+        self.config_path = config_path
+        attributes = self._get_config()
+
+        for key, value in attributes.items():
+            if isinstance(value, dict):
+                value = self._create_enum(key, value)
+            setattr(self, key, value)
+
+    def _get_config(self):
+        config = {}
+        with open(self.config_path, "r") as file:
+            config = json.load(file)
+        return config
+
+    def _create_enum(self, name, dictionary):
+        return Enum(name, dictionary)
